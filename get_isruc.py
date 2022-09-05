@@ -53,12 +53,12 @@ def contaminate(clean, artifact_ori, times = 1):
     # exit()
     # combin eeg and noise for test set 
     noise_EEG = []
+    noise_EEG_tmp=[]
     for i in range(times): # 1-10 snr ratio
         noise_eeg_val = []
         for j in range(clean.shape[0]): # batch-level   
             eeg = clean[j]
             noise = artifact[j]
-
             coe = get_rms(eeg) / (get_rms(noise) * SNR_val)
             
             noise = noise * coe.reshape(-1,1)
@@ -67,8 +67,39 @@ def contaminate(clean, artifact_ori, times = 1):
             
             noise_eeg_val.append(neeg)
         
-        noise_EEG.extend(noise_eeg_val)
-    noise_EEG = np.stack(noise_EEG,axis=0)
+        noise_EEG_tmp.extend(noise_eeg_val)
+    noise_EEG_tmp = np.stack(noise_EEG_tmp,axis=0)
+    
+    print("clean",np.shape(clean))
+    print("noise_EEG_tmp",np.shape(noise_EEG_tmp))
+    
+    EEG_tmp=[]
+    for i in range(clean.shape[0]):
+        v_tmp=[]
+        for j in range(clean.shape[1]):
+            h_tmp=[]
+            h_tmp.extend(clean[i][j][0:1000])
+            h_tmp.extend(noise_EEG_tmp[i][j][1000:2000])
+            h_tmp.extend(clean[i][j][2000:3000])
+            v_tmp.append(h_tmp)
+        # print("h_tmp",np.shape(h_tmp))
+        # print("v_tmp.shape",np.shape(v_tmp))
+        EEG_tmp.append(v_tmp)
+    
+    print("EEG_tmp",np.shape(EEG_tmp))
+    noise_EEG=np.array(EEG_tmp)
+    # clean_ds=np.dsplit(clean,1000)
+    
+    # print("clean_ds.shape:",np.shape(clean_ds))
+    # noise_EEG_tmp=np.dsplit(noise_EEG_tmp,1000)
+    # # noise_EEG_tmp=noise_EEG_tmp.tolist()
+    # print("noise_EEG_tmp.shape:",np.shape(noise_EEG_tmp))
+
+    # noise_EEG.extend(clean_ds[:][:][:][0])
+    # noise_EEG.extend(noise_EEG_tmp[:][:][:][1])
+    # noise_EEG.extend(clean_ds[:][:][:][2])
+      
+    # print(np.shape(noise_EEG)) 
     return noise_EEG
 
 '''
