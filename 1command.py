@@ -8,7 +8,7 @@ data_dir = '/data/Liulei/preprocess/data'
 save_dir = 'result'
 
 device = 2
-num_epochs = 50
+num_epochs = 10
 
 com_code = f'python main.py --cuda {device} --data_dir {data_dir}  --save_dir {save_dir}  --do_train --num_epochs {num_epochs} '
 

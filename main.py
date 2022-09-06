@@ -141,6 +141,7 @@ def train(model, train_loader,val_loader, args, device, save_dir, log): #, tbx
         total_samples = len(train_loader)
 
         for noiseeeg_batch, cleaneeg_batch in train_loader:
+            #在这个位置进行添加
             noiseeeg_batch = noiseeeg_batch.to(device)
             cleaneeg_batch = cleaneeg_batch.to(device)
             
@@ -204,13 +205,60 @@ def evaluate(
     y_pred_all = torch.cat( y_pred_all,dim=0)
     y_true_all = torch.cat( y_true_all,dim=0)
     
+    (EEG_1,EEG_2,EEG_3,noiseEEG_1,noiseEEG_2,noiseEEG_3)=divid_data(y_true_all.cpu().numpy(),y_pred_all.cpu().numpy())
+
+    #计算loss是使用torch
     rrmset_clean = denoise_loss_rrmset(y_pred_all, y_true_all)
     corr = get_corr(y_pred_all, y_true_all)
+
     message = f"  | {rrmset_clean:<7.3f}{corr:<7.3f}{time() - val_start_time:<6.2f}s"
 
     print(message, end='', flush=False)
-    print()
     return rrmset_clean.detach().cpu().numpy(), corr.detach().cpu().numpy()
 
+def divid_data(clean,noise):
+    #在GPU的tensor
+    clean=clean.tolist()
+    noise=noise.tolist()
+    EEG_1=[]
+    EEG_2=[]
+    EEG_3=[]
+    noiseEEG_1=[]
+    noiseEEG_2=[]
+    noiseEEG_3=[]
+    print("to split")
+    print("np.shape(clean)",np.shape(clean))
+    print("np.shape(clean)[0]",np.shape(clean)[0])
+    for i in range(np.shape(clean)[0]):
+        seg_1=[]
+        seg_2=[]
+        seg_3=[]
+        noiseSeg_1=[]
+        noiseSeg_2=[]
+        noiseSeg_3=[]
+        for j in range(np.shape(clean)[1]):
+            seg_1.append(clean[i][j][0:1000])
+            seg_2.append(clean[i][j][1000:2000])
+            seg_3.append(clean[i][j][2000:3000])
+            noiseSeg_1.append(noise[i][j][0:1000])
+            noiseSeg_2.append(noise[i][j][1000:2000])
+            noiseSeg_3.append(noise[i][j][2000:3000])
+        print("times:",i)   
+        EEG_1.append(seg_1)
+        EEG_2.append(seg_2)
+        EEG_3.append(seg_3)
+        noiseEEG_1.append(noiseSeg_1)
+        noiseEEG_2.append(noiseSeg_2)
+        noiseEEG_3.append(noiseSeg_3)    
+        # print("h_tmp",np.shape(h_tmp))
+        # print("v_tmp.shape",np.shape(v_tmp))
+    print("EEG_1",np.shape(EEG_1))
+    print("EEG_2",np.shape(EEG_2))
+    print("EEG_3",np.shape(EEG_3))
+    print("noiseEEG_1",np.shape(noiseEEG_1))
+    print("noiseEEG_2",np.shape(noiseEEG_2))
+    print("noiseEEG_3",np.shape(noiseEEG_3))    
+    return EEG_1,EEG_2,EEG_3,noiseEEG_1,noiseEEG_2,noiseEEG_3    
+    
 if __name__ == '__main__':
     main(get_args())
